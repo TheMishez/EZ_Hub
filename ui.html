@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<title>EZ Hub</title>
+<style>
+  :root {
+    --bg: #0d0e12;
+    --rail: #13151b;
+    --line: #22252e;
+    --text: #e8e9ee;
+    --muted: #7d8190;
+    --accent: #7cf29c;
+    --warn: #ffb347;
+    --err: #ff5c6c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--line); color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; user-select: none; overflow: hidden; }
+  .rail {
+    position: fixed; inset: 0 auto 0 0; width: 72px;
+    background: var(--rail); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; padding: 14px 0 12px; gap: 8px;
+  }
+  .logo { margin: 2px 0 14px; line-height: 0; }
+  button {
+    all: unset; cursor: pointer; width: 56px; padding: 10px 0 8px; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    color: var(--muted); position: relative; transition: background .12s, color .12s;
+  }
+  button:hover { background: #1b1e26; color: var(--text); }
+  button.active { background: #1f2330; color: var(--text); }
+  button.active::before {
+    content: ""; position: absolute; left: -8px; top: 10px; bottom: 10px; width: 3px;
+    border-radius: 2px; background: var(--accent);
+  }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .glyph { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    font-weight: 800; font-size: 14px; background: #262a36; color: var(--text); }
+  .label { font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; }
+  .dot { position: absolute; top: 7px; right: 9px; width: 7px; height: 7px; border-radius: 50%;
+    background: transparent; }
+  .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+  .dot.error { background: var(--err); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .spacer { flex: 1; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+  <nav class="rail">
+    <div class="logo" title="EZ Hub"><svg viewBox="0 0 1870 681" width="44" height="16" aria-label="EZ"><polygon fill="#AFAEAE" points="191,0 984,0 797,164 397,164 376,242 969,242 769,402 332,402 307,491 844,491 603,681 0,681"/><polygon fill="#FECC13" points="1039,0 1870,0 1274,491 1748,491 1521,681 664,681 1334,164 852,164"/></svg></div>
+
+    <button id="btn-pulsar" data-mode="pulsar" title="Pulsar (Ctrl+1)">
+      <i class="dot" id="dot-pulsar"></i>
+      <div class="glyph">P</div><div class="label">Pulsar</div>
+    </button>
+
+    <button id="btn-razer" data-mode="razer" title="Razer (Ctrl+2)">
+      <i class="dot" id="dot-razer"></i>
+      <div class="glyph">R</div><div class="label">Razer</div>
+    </button>
+
+    <button id="btn-split" data-mode="split" title="Side by side (Ctrl+3)">
+      <div class="glyph">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="1.5" y="2.5" width="13" height="11" rx="2"/><line x1="8" y1="2.5" x2="8" y2="13.5"/>
+        </svg>
+      </div>
+      <div class="label">Split</div>
+    </button>
+
+    <div class="spacer"></div>
+
+    <button id="btn-reload" title="Reload (Ctrl+R)">
+      <div class="glyph">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.5v3h-3"/>
+        </svg>
+      </div>
+      <div class="label">Reload</div>
+    </button>
+  </nav>
+
+<script>
+  document.querySelectorAll('button[data-mode]').forEach((b) =>
+    b.addEventListener('click', () => window.hub.setMode(b.dataset.mode)));
+  document.getElementById('btn-reload').addEventListener('click', () => window.hub.reload());
+
+  window.hub.onState(({ mode, status }) => {
+    document.querySelectorAll('button[data-mode]').forEach((b) =>
+      b.classList.toggle('active', b.dataset.mode === mode));
+    for (const [id, s] of Object.entries(status || {})) {
+      const dot = document.getElementById('dot-' + id);
+      if (dot) dot.className = 'dot ' + (s === 'ready' ? '' : s);
+    }
+  });
+  window.hub.ready();
+</script>
+</body>
+</html>

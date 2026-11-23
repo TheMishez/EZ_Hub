@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<title>Connect a device</title>
+<style>
+  :root { --bg: #0d0e12; --card: #161920; --line: #262a35; --text: #e8e9ee; --muted: #7d8190; --accent: #7cf29c; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; user-select: none; }
+  body { display: flex; flex-direction: column; padding: 18px; gap: 12px; }
+  h1 { font-size: 16px; font-weight: 700; }
+  .sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .sub b { color: var(--text); font-weight: 600; }
+  ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  li { padding: 11px 14px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  li:last-child { border-bottom: none; }
+  li:hover { background: #1d212b; }
+  li.sel { background: #1f2a24; box-shadow: inset 3px 0 0 var(--accent); }
+  .name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vid { font-size: 11px; color: var(--muted); font-family: Consolas, monospace; flex-shrink: 0; }
+  .empty { padding: 26px 14px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; cursor: default; }
+  .empty:hover { background: none; }
+  .row { display: flex; justify-content: flex-end; gap: 8px; }
+  button { all: unset; cursor: pointer; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  #cancel { color: var(--muted); }
+  #cancel:hover { color: var(--text); background: #1b1e26; }
+  #connect { background: var(--accent); color: #0b1a10; }
+  #connect[disabled] { opacity: .35; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+  <div>
+    <h1>Connect a device</h1>
+    <div class="sub"><b id="origin">This site</b> wants to talk to a device.</div>
+  </div>
+  <ul id="list"></ul>
+  <div class="row">
+    <button id="cancel">Cancel</button>
+    <button id="connect" disabled>Connect</button>
+  </div>
+<script>
+  let selected = null;
+  const list = document.getElementById('list');
+  const connect = document.getElementById('connect');
+
+  function render(devices) {
+    list.innerHTML = '';
+    if (!devices.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'No compatible devices found. Plug in the mouse or keyboard (or its receiver) and it will show up here.';
+      list.appendChild(li);
+      selected = null; connect.disabled = true;
+      return;
+    }
+    if (!devices.some((d) => d.deviceId === selected)) selected = devices.length === 1 ? devices[0].deviceId : null;
+    for (const d of devices) {
+      const li = document.createElement('li');
+      if (d.deviceId === selected) li.className = 'sel';
+      const name = document.createElement('span'); name.className = 'name'; name.textContent = d.name;
+      const vid = document.createElement('span'); vid.className = 'vid'; vid.textContent = d.id;
+      li.append(name, vid);
+      li.addEventListener('click', () => { selected = d.deviceId; render(devices); });
+      li.addEventListener('dblclick', () => window.picker.choose(d.deviceId));
+      list.appendChild(li);
+    }
+    connect.disabled = !selected;
+  }
+
+  window.picker.onList(({ origin, devices }) => {
+    document.getElementById('origin').textContent = origin || 'This site';
+    render(devices);
+  });
+  connect.addEventListener('click', () => { if (selected) window.picker.choose(selected); });
+  document.getElementById('cancel').addEventListener('click', () => window.picker.cancel());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') window.picker.cancel();
+    if (e.key === 'Enter' && selected) window.picker.choose(selected);
+  });
+</script>
+</body>
+</html>
